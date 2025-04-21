@@ -1,0 +1,146 @@
+:root {
+    --fontbase: "ClashDisplay-Variable", "sans-serif";
+  }
+  
+  .login-main {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    font-family: var(--fontbase);
+  }
+  .image-container {
+    display: flex;
+  
+    height: 50vh;
+  }
+  .login-image {
+    /* width: ; */
+    height: 100vh;
+    object-fit: cover;
+    object-position: center bottom;
+    border-radius: 0px 40px 40px 0px;
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 25px 50px -12px;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    background-color: #ffffff;
+    width: 50%;
+  }
+  
+  .login-info {
+    width: 280px;
+    position: relative;
+    bottom: 40%;
+    left: 65%;
+  }
+  .login-info button {
+    border: none;
+    background: none;
+    font-family: var(--fontbase);
+    font-size: 15px;
+    margin-left: 3px;
+  }
+  
+  
+  
+  .login-info button:hover {
+    color: #0747e9;
+  }
+  .login-cred{
+      position: relative;
+      /* display: flex; */
+      right: 10rem;
+      /* justify-content: center; */
+  }
+  
+  .login-inputs {
+      font-family: var(--fontbase);
+      font-weight: 450;
+      position: absolute;
+      top: -110px;
+      left: -110px;
+    }
+    .login-input {
+      margin: 35px;
+      font-family: var(--fontbase);
+    }
+    .login-inputbox {
+      width: 400px;
+      /* box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px; */
+      /* box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px; */
+    
+      border: 1px solid #b8b6b6;
+      border-radius: 10px;
+      padding: 8px;
+      margin: 5px;
+      position: relative;
+      left: -8px;
+    }
+    .login-inputbox::placeholder {
+      color: #aaadb3;
+      font-size: 12px;
+    }
+    .login-info2{
+      position: relative;
+      bottom: 45%;
+      right: 130%;
+      width: 100px;
+  
+  
+    }
+    .login-info2 h1{
+      width:190px;
+      font-weight: 450;
+    }
+    /* .signin-button button{
+      position: relative;
+      top: 140px;
+    } */
+  
+    .submit-container {
+      position: relative;
+      top: 150px;
+      font-family: var(--fontbase);
+    }
+    
+    
+    
+    .submit2 button {
+      background-color: #eee;
+      border: none;
+      padding: 0.5rem;
+      font-family: var(--fontbase);
+      font-size: 1rem;
+      width: 300px;
+      border-radius: 1rem;
+      color: #CE6757;
+      box-shadow: 0 0.4rem #dfd9d9;
+      cursor: pointer;
+      position: relative;
+      /* margin-top: 90px; */
+      top:150px;
+      left: -25px;
+    }
+    
+    .submit2 button:active {
+      color: white;
+      box-shadow: 0 0.2rem #dfd9d9;
+      transform: translateY(0.2rem);
+    }
+    
+    .submit2 button:hover:not(:disabled) {
+      background: #CE6757;
+      color: white;
+      text-shadow: 0 0.05rem #bcb4b4;
+    }
+    
+    .submit2 button:disabled {
+      cursor: auto;
+      color: grey;
+    }
+  
+  
