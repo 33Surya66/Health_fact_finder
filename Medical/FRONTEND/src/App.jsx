@@ -14,6 +14,7 @@ import About from "./components/About";
 import Analyze from "./components/Analyze";
 import Stats from "./components/Stats";
 import HowItWorks from "./components/HowItWorks";
+import RedditMisinformation from "./components/RedditMisinformationWithVerification";
 import Upload from "./components/Upload";
 import Contact from "./components/Contact";
 import FAQ from "./components/FAQ";
@@ -21,6 +22,7 @@ import Footer from "./components/Footer";
 import LogIn from "./components/login-signup/login";
 import SignIn from "./components/login-signup/signin";
 import ProtectedRoute from "./components/ProtectedRoute";
+
 
 // Wrapper component to handle Nav visibility
 const AppContent = () => {
@@ -54,6 +56,7 @@ const AppContent = () => {
                   <About />
                   <Analyze />
                   <Stats />
+                  {/* <RedditMisinformationWithVerification /> */}
                   <HowItWorks />
                   <Upload />
                   <Contact />
