@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import * as mammoth from 'mammoth';
 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
 function Upload() {
   const [files, setFiles] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -8,17 +10,19 @@ function Upload() {
   const [isAnalyzed, setIsAnalyzed] = useState(false);
   const [error, setError] = useState(null);
 
-  // Simulated verification function
-  const verifyDocument = (text) => {
-    // Split the text into sentences
-    const sentences = text.split(/(?<=[.!?])\s+/);
-    
-    // For demo purposes, simulate verification
-    return sentences.map(sentence => ({
-      text: sentence,
-      isTrue: Math.random() > 0.3, // 70% true for demonstration
-    }));
+  // Classification categories with corresponding colors
+  const classificationColors = {
+    relevant: "bg-green-100 text-green-800",
+    irrelevant: "bg-gray-100 text-gray-800",
+    probabilistic: "bg-yellow-100 text-yellow-800",
+    falsePrescription: "bg-red-100 text-red-800"
   };
+
+  // Medical conditions for classification
+  const medicalConditions = [
+    "Diabetes", "Hypertension", "Asthma", "Heart Disease", 
+    "Cancer", "Alzheimer's", "Arthritis", "Depression"
+  ];
 
   // Extract text based on file type
   const extractTextFromFile = async (file) => {
@@ -26,20 +30,90 @@ function Upload() {
       const fileType = file.name.split('.').pop().toLowerCase();
       
       if (['docx'].includes(fileType)) {
-        // Handle Word documents using mammoth
         const arrayBuffer = await file.arrayBuffer();
         const result = await mammoth.extractRawText({ arrayBuffer });
-        return result.value; // This is the plain text content
+        return result.value;
       } else if (['txt', 'md', 'rtf'].includes(fileType)) {
-        // Handle plain text files
         return await file.text();
       } else {
-        // For unsupported file types
         throw new Error(`Unsupported file type: ${fileType}`);
       }
     } catch (err) {
       console.error("Error extracting text:", err);
       throw err;
+    }
+  };
+
+  // Analyze medical document text
+  const analyzeDocument = (text) => {
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    
+    return sentences.map(sentence => {
+      const hasPrescriptionPattern = /\d+\s*mg|\d+\s*tablet|take\s+\d+|prescribed|medication|dosage/i.test(sentence);
+      const isPrescription = hasPrescriptionPattern;
+      
+      const conditionMatches = medicalConditions.filter(condition => 
+        sentence.toLowerCase().includes(condition.toLowerCase())
+      );
+      
+      let classification = "irrelevant";
+      if (conditionMatches.length > 0) {
+        classification = "relevant";
+      }
+      
+      if (/may|might|possibly|probably|could|likely|chance|risk|potential/i.test(sentence)) {
+        classification = "probabilistic";
+      }
+      
+      if (isPrescription && /unsafe|contraindicated|dangerous|not recommended|caution|warning/i.test(sentence)) {
+        classification = "falsePrescription";
+      }
+      
+      return {
+        text: sentence,
+        classification,
+        conditions: conditionMatches,
+        isPrescription
+      };
+    });
+  };
+
+  // Call Gemini API for enhanced analysis
+  const callGeminiAPI = async (text) => {
+    if (!GEMINI_API_KEY) {
+      setError("Gemini API key is not configured");
+      return null;
+    }
+    
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Analyze this medical document for potential issues, inconsistencies, and medical accuracy:
+              
+              ${text}
+              
+              Provide a structured analysis in the following format:
+              - **Detected Medical Conditions**: List any medical conditions found
+              - **Potential Incorrect Prescriptions**: Note any problematic prescriptions
+              - **Consistency Issues**: Highlight any contradictions
+              - **Concerning Medical Advice**: Flag any risky advice`
+            }]
+          }]
+        })
+      });
+      
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.error("Error calling Gemini API:", err);
+      setError(`Error calling Gemini API: ${err.message}`);
+      return null;
     }
   };
 
@@ -58,15 +132,17 @@ function Upload() {
     const newDocuments = [];
     
     try {
-      // Process each file
       for (const file of files) {
         try {
           const content = await extractTextFromFile(file);
-          const verifiedContent = verifyDocument(content);
+          const analyzedContent = analyzeDocument(content);
+          const geminiResult = await callGeminiAPI(content);
           
           newDocuments.push({
             name: file.name,
-            content: verifiedContent
+            content: analyzedContent,
+            rawText: content,
+            geminiAnalysis: geminiResult
           });
         } catch (err) {
           console.error(`Error processing file ${file.name}:`, err);
@@ -100,7 +176,7 @@ function Upload() {
     <section id="upload" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-center mb-12">
-          Upload Documents
+          Medical Document Analyzer
         </h2>
         <div className="max-w-2xl mx-auto">
           <div className="bg-white p-8 rounded-lg shadow-md">
@@ -163,7 +239,7 @@ function Upload() {
                     disabled={isProcessing}
                     className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition disabled:bg-blue-300 disabled:cursor-not-allowed"
                   >
-                    {isProcessing ? "Processing..." : "Verify Documents"}
+                    {isProcessing ? "Processing..." : "Analyze Documents"}
                   </button>
                 </div>
               </div>
@@ -172,7 +248,7 @@ function Upload() {
 
           {isAnalyzed && documents.length > 0 && (
             <div className="mt-8 bg-white p-8 rounded-lg shadow-md">
-              <h2 className="text-xl font-bold mb-6">Verification Results</h2>
+              <h2 className="text-xl font-bold mb-6">Analysis Results</h2>
               {documents.map((doc, docIndex) => (
                 <div key={docIndex} className="mb-6">
                   <h3 className="font-medium text-lg mb-2">{doc.name}</h3>
@@ -180,24 +256,71 @@ function Upload() {
                     {doc.content.map((sentence, idx) => (
                       <span 
                         key={idx} 
-                        className={`${sentence.isTrue ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} rounded px-1 py-0.5 inline`}
+                        className={`${classificationColors[sentence.classification]} rounded px-1 py-0.5 inline`}
+                        title={sentence.conditions.length > 0 ? `Related to: ${sentence.conditions.join(', ')}` : ''}
                       >
                         {sentence.text}{' '}
                       </span>
                     ))}
                   </div>
-                  <div className="mt-4 flex justify-between text-sm">
+                  {doc.geminiAnalysis && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <h4 className="text-md font-medium mb-2">Gemini AI Analysis</h4>
+                      <div className="bg-blue-50 p-4 rounded-md text-blue-800">
+                        {doc.geminiAnalysis.candidates && doc.geminiAnalysis.candidates[0]?.content?.parts[0]?.text ? (
+                          <div className="whitespace-pre-line">
+                            {doc.geminiAnalysis.candidates[0].content.parts[0].text}
+                          </div>
+                        ) : (
+                          <p>No analysis available. Please check your API configuration.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-4 flex flex-wrap gap-4 text-sm">
                     <div>
                       <span className="inline-block w-3 h-3 bg-green-100 rounded-full mr-1"></span>
-                      <span className="text-gray-600">True statements</span>
+                      <span className="text-gray-600">Relevant medical information</span>
+                    </div>
+                    <div>
+                      <span className="inline-block w-3 h-3 bg-yellow-100 rounded-full mr-1"></span>
+                      <span className="text-gray-600">Probabilistic statements</span>
                     </div>
                     <div>
                       <span className="inline-block w-3 h-3 bg-red-100 rounded-full mr-1"></span>
-                      <span className="text-gray-600">False or uncertain statements</span>
+                      <span className="text-gray-600">Potential false prescriptions</span>
+                    </div>
+                    <div>
+                      <span className="inline-block w-3 h-3 bg-gray-100 rounded-full mr-1"></span>
+                      <span className="text-gray-600">Irrelevant information</span>
                     </div>
                   </div>
                 </div>
               ))}
+              
+              {documents.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-medium mb-3">Medical Conditions Summary</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {medicalConditions.map(condition => {
+                      const count = documents.reduce((acc, doc) => {
+                        return acc + doc.content.filter(sentence => 
+                          sentence.conditions.includes(condition)
+                        ).length;
+                      }, 0);
+                      
+                      return (
+                        <div key={condition} className="bg-white p-3 rounded-md border border-gray-200">
+                          <div className="font-medium">{condition}</div>
+                          <div className="text-sm text-gray-600">
+                            {count > 0 ? `${count} mentions found` : 'No mentions found'}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

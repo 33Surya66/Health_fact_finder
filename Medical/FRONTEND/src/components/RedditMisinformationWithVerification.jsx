@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaReddit, FaArrowUp, FaArrowDown, FaComment } from 'react-icons/fa';
+import { FaReddit, FaArrowUp, FaArrowDown, FaComment, FaAward, FaShieldAlt, FaCheck, FaTimes, FaQuestion } from 'react-icons/fa';
 
 // Probabilistic trie for username generation
 class TrieNode {
@@ -98,6 +98,7 @@ class ProbabilisticTrie {
 function RedditMisinformationWithVerification() {
   const [posts, setPosts] = useState([]);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [showVerification, setShowVerification] = useState(false);
   const usernameGenerator = new ProbabilisticTrie();
   
   // Health misinformation topics and claims (all false statements)
@@ -220,84 +221,136 @@ function RedditMisinformationWithVerification() {
     // Shuffle the posts
     const shuffledPosts = generatedPosts.sort(() => Math.random() - 0.5);
     setPosts(shuffledPosts);
+    
+    // Log the generated posts to console
+    console.log(`Found ${shuffledPosts.length} Reddit posts with health misinformation`);
+    console.log("Posts data:", shuffledPosts);
   }, []);
   
   const handlePostClick = (post) => {
     setSelectedPost(post);
-    // Scroll to top of verification section
-    const verificationSection = document.getElementById('verification-section');
-    if (verificationSection) {
-      verificationSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    setShowVerification(false);
+    
+    // Log which post was clicked
+    console.log(`Post clicked: "${post.title}" from ${post.subreddit}`);
+    console.log("Post details:", post);
+    
+    // Small delay for animation effect
+    setTimeout(() => {
+      setShowVerification(true);
+      // Scroll to top of verification section
+      const verificationSection = document.getElementById('verification-section');
+      if (verificationSection) {
+        verificationSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 300);
+  };
+
+  const getVerificationIcon = (confidence) => {
+    if (confidence.false_confidence > 0.7) return <FaTimes className="text-2xl text-red-600" />;
+    if (confidence.true_confidence > 0.7) return <FaCheck className="text-2xl text-green-600" />;
+    return <FaQuestion className="text-2xl text-yellow-500" />;
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen">
-      <header className="bg-blue-800 text-white p-4">
+    <div className="bg-slate-100 min-h-screen font-sans">
+      <header className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white p-6 shadow-lg">
         <div className="container mx-auto">
-          <h1 className="text-3xl font-bold flex items-center">
-            <FaReddit className="mr-2" /> Health Misinformation Detector
-          </h1>
-          <p className="text-blue-100 mt-2">Learn to identify and verify dubious health claims</p>
+          <div className="flex items-center">
+            <div className="bg-white p-2 rounded-full text-red-500 mr-3 shadow-md">
+              <FaReddit className="text-3xl" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight">Health Misinformation Detector</h1>
+              <p className="text-blue-100 mt-2 text-lg">Learn to identify and verify dubious health claims</p>
+            </div>
+          </div>
         </div>
       </header>
 
       {/* Verification Result Section */}
       {selectedPost && (
-        <section id="verification-section" className="py-6 bg-white border-b border-gray-200">
+        <section 
+          id="verification-section" 
+          className={`py-8 bg-white border-b border-gray-200 shadow-md transition-all duration-500 ${showVerification ? 'opacity-100' : 'opacity-0'}`}
+        >
           <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-2xl font-bold text-blue-800 mb-4">Fact Check Results</h2>
-              
-              <div className="mb-4">
-                <span className="font-medium text-gray-700">Claim analyzed: </span>
-                <span className="font-semibold">{selectedPost.claim}</span>
+            <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="bg-blue-900 text-white p-4 flex items-center">
+                <FaShieldAlt className="text-2xl mr-3" />
+                <h2 className="text-2xl font-bold">Fact Check Results</h2>
               </div>
               
-              <div className="grid grid-cols-1 gap-6">
-                <div className="bg-gray-50 p-4 rounded-md">
-                  <h3 className="font-semibold text-lg mb-2">
-                    Fact Check Result:
-                    <span className="ml-2 text-red-600">FALSE</span>
-                  </h3>
+              <div className="p-6">
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">Claim analyzed:</h3>
+                  <p className="text-xl font-semibold text-blue-900">{selectedPost.claim}</p>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="p-5 rounded-xl bg-gradient-to-br from-red-50 to-gray-50 border border-red-100 shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-bold text-xl">
+                        Fact Check Result:
+                      </h3>
+                      <div className="flex items-center px-4 py-1 bg-red-100 text-red-700 rounded-full font-bold shadow-sm">
+                        {getVerificationIcon(selectedPost)}
+                        <span className="ml-2">FALSE</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <div className="flex items-center mb-3">
+                        <div className="w-20 text-sm font-medium">True:</div>
+                        <div className="flex-1 bg-gray-200 rounded-full h-3 shadow-inner">
+                          <div 
+                            className="bg-green-500 h-3 rounded-full shadow-sm transition-all duration-1000 ease-out"
+                            style={{width: `${selectedPost.true_confidence * 100}%`}}
+                          ></div>
+                        </div>
+                        <div className="ml-3 text-sm font-medium w-16">{(selectedPost.true_confidence * 100).toFixed(1)}%</div>
+                      </div>
+                      <div className="flex items-center mb-3">
+                        <div className="w-20 text-sm font-medium">False:</div>
+                        <div className="flex-1 bg-gray-200 rounded-full h-3 shadow-inner">
+                          <div 
+                            className="bg-red-500 h-3 rounded-full shadow-sm transition-all duration-1000 ease-out" 
+                            style={{width: `${selectedPost.false_confidence * 100}%`}}
+                          ></div>
+                        </div>
+                        <div className="ml-3 text-sm font-medium w-16">{(selectedPost.false_confidence * 100).toFixed(1)}%</div>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-20 text-sm font-medium">Uncertain:</div>
+                        <div className="flex-1 bg-gray-200 rounded-full h-3 shadow-inner">
+                          <div 
+                            className="bg-yellow-400 h-3 rounded-full shadow-sm transition-all duration-1000 ease-out" 
+                            style={{width: `${selectedPost.not_known_confidence * 100}%`}}
+                          ></div>
+                        </div>
+                        <div className="ml-3 text-sm font-medium w-16">{(selectedPost.not_known_confidence * 100).toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  </div>
                   
-                  <div className="mb-4">
-                    <div className="flex items-center mb-1">
-                      <div className="w-20 text-sm">True:</div>
-                      <div className="flex-1 bg-gray-200 rounded-full h-2.5">
-                        <div 
-                          className="bg-green-600 h-2.5 rounded-full" 
-                          style={{width: `${selectedPost.true_confidence * 100}%`}}
-                        ></div>
-                      </div>
-                      <div className="ml-2 text-sm">{(selectedPost.true_confidence * 100).toFixed(1)}%</div>
-                    </div>
-                    <div className="flex items-center mb-1">
-                      <div className="w-20 text-sm">False:</div>
-                      <div className="flex-1 bg-gray-200 rounded-full h-2.5">
-                        <div 
-                          className="bg-red-600 h-2.5 rounded-full" 
-                          style={{width: `${selectedPost.false_confidence * 100}%`}}
-                        ></div>
-                      </div>
-                      <div className="ml-2 text-sm">{(selectedPost.false_confidence * 100).toFixed(1)}%</div>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-20 text-sm">Uncertain:</div>
-                      <div className="flex-1 bg-gray-200 rounded-full h-2.5">
-                        <div 
-                          className="bg-yellow-500 h-2.5 rounded-full" 
-                          style={{width: `${selectedPost.not_known_confidence * 100}%`}}
-                        ></div>
-                      </div>
-                      <div className="ml-2 text-sm">{(selectedPost.not_known_confidence * 100).toFixed(1)}%</div>
-                    </div>
+                  <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-sm">
+                    <h3 className="font-bold text-xl mb-3 text-blue-800">Medical Information:</h3>
+                    <p className="text-gray-700 leading-relaxed">{selectedPost.evidence}</p>
                   </div>
                 </div>
                 
-                <div className="bg-blue-50 p-4 rounded-md">
-                  <h3 className="font-semibold text-lg mb-2">Medical Information:</h3>
-                  <p className="text-gray-700">{selectedPost.evidence}</p>
+                <div className="mt-6 flex justify-end">
+                  <button 
+                    className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors duration-200 font-medium"
+                    onClick={() => {
+                      const postsSection = document.getElementById('posts-section');
+                      if (postsSection) {
+                        postsSection.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                  >
+                    Back to posts
+                  </button>
                 </div>
               </div>
             </div>
@@ -306,11 +359,14 @@ function RedditMisinformationWithVerification() {
       )}
 
       {/* Reddit Posts Section */}
-      <section className="py-8 px-4">
+      <section id="posts-section" className="py-12 px-4">
         <div className="container mx-auto">
-          <div className="section-header mb-8">
-            <h2 className="text-3xl font-bold text-blue-800 flex items-center mb-4">
-              <FaReddit className="mr-2 text-red-500" /> Health Misinformation Examples
+          <div className="section-header mb-10">
+            <h2 className="text-3xl font-bold text-blue-900 flex items-center mb-4">
+              <div className="bg-red-100 p-2 rounded-lg mr-3 text-red-500">
+                <FaReddit className="text-3xl" />
+              </div>
+              Health Misinformation Examples
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl">
               Below are examples of health misinformation commonly found on social media.
@@ -319,49 +375,80 @@ function RedditMisinformationWithVerification() {
           </div>
 
           <div className="posts-container space-y-6 max-w-4xl mx-auto">
-            {posts.map((post, index) => (
-              <div key={index} className="reddit-post bg-white rounded-lg shadow-md overflow-hidden flex cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={() => handlePostClick(post)}>
-                <div className="vote-section bg-gray-50 p-3 text-center flex flex-col items-center">
-                  <FaArrowUp className="text-gray-400 hover:text-orange-500" />
-                  <span className={`font-medium my-2 ${post.score > 0 ? 'text-orange-500' : 'text-blue-500'}`}>
-                    {Math.abs(post.score) > 999 
-                      ? `${(Math.abs(post.score)/1000).toFixed(1)}k` 
-                      : Math.abs(post.score)}
-                  </span>
-                  <FaArrowDown className="text-gray-400 hover:text-blue-500" />
-                </div>
-                
-                <div className="post-content p-4 flex-1">
-                  <div className="post-header text-sm text-gray-500 mb-2">
-                    <span className="subreddit font-medium text-blue-600">{post.subreddit}</span>
-                    <span className="post-info ml-2">
-                      Posted by u/{post.username} • {post.timePosted}
-                      {post.awards > 0 && <span className="awards ml-2">🏅 {post.awards}</span>}
+            {posts.length > 0 ? (
+              posts.map((post, index) => (
+                <div 
+                  key={index} 
+                  className="reddit-post bg-white rounded-xl shadow-sm overflow-hidden flex cursor-pointer hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1 border border-gray-100"
+                  onClick={() => handlePostClick(post)}
+                >
+                  <div className="vote-section bg-gray-50 p-3 text-center flex flex-col items-center border-r border-gray-100">
+                    <button className="upvote-btn w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors duration-200">
+                      <FaArrowUp className="text-gray-400 hover:text-orange-500" />
+                    </button>
+                    <span className={`font-medium my-2 ${post.score > 0 ? 'text-orange-500' : 'text-blue-500'}`}>
+                      {Math.abs(post.score) > 999 
+                        ? `${(Math.abs(post.score)/1000).toFixed(1)}k` 
+                        : Math.abs(post.score)}
                     </span>
+                    <button className="downvote-btn w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors duration-200">
+                      <FaArrowDown className="text-gray-400 hover:text-blue-500" />
+                    </button>
                   </div>
                   
-                  <h3 className="post-title text-xl font-medium mb-2">{post.title}</h3>
-                  <p className="post-text text-gray-700 mb-4">{post.content}</p>
-                  
-                  <div className="post-footer flex items-center justify-between text-sm text-gray-500">
-                    <span className="comments flex items-center">
-                      <FaComment className="mr-1" /> {post.comments} comments
-                    </span>
-                    <div className="post-actions flex space-x-4">
-                      <button className="action-button hover:text-blue-600" onClick={(e) => e.stopPropagation()}>Share</button>
-                      <button className="action-button hover:text-blue-600" onClick={(e) => e.stopPropagation()}>Save</button>
-                      <button className="action-button hover:text-red-600" onClick={(e) => e.stopPropagation()}>Report</button>
+                  <div className="post-content p-5 flex-1">
+                    <div className="post-header text-sm text-gray-500 mb-3">
+                      <span className="subreddit font-medium text-blue-600 hover:underline">{post.subreddit}</span>
+                      <span className="post-info ml-2">
+                        Posted by <span className="text-gray-700 hover:underline">u/{post.username}</span> • {post.timePosted}
+                        {post.awards > 0 && (
+                          <span className="awards ml-2 inline-flex items-center text-amber-500">
+                            <FaAward className="mr-1" /> {post.awards}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    
+                    <h3 className="post-title text-xl font-medium mb-3 text-gray-900">{post.title}</h3>
+                    <p className="post-text text-gray-700 mb-4 leading-relaxed">{post.content}</p>
+                    
+                    <div className="post-footer flex items-center text-sm text-gray-500">
+                      <span className="comments flex items-center hover:bg-gray-100 px-2 py-1 rounded">
+                        <FaComment className="mr-1" /> {post.comments} comments
+                      </span>
+                      <div className="post-actions flex space-x-2 ml-auto">
+                        <button className="action-button hover:bg-gray-100 px-3 py-1 rounded transition-colors duration-200" onClick={(e) => e.stopPropagation()}>Share</button>
+                        <button className="action-button hover:bg-gray-100 px-3 py-1 rounded transition-colors duration-200" onClick={(e) => e.stopPropagation()}>Save</button>
+                        <button className="action-button hover:bg-red-50 text-gray-500 hover:text-red-600 px-3 py-1 rounded transition-colors duration-200" onClick={(e) => e.stopPropagation()}>Report</button>
+                      </div>
                     </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="p-8 bg-white rounded-xl shadow text-center">
+                <p className="text-lg text-gray-600">
+                  No Reddit posts found. Check the console for debugging information.
+                </p>
+                {console.log("No Reddit posts were found in the component")}
               </div>
-            ))}
+            )}
           </div>
           
-          <div className="disclaimer mt-8 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded max-w-4xl mx-auto">
-            <strong>Important:</strong> These posts are fictional examples created to illustrate 
-            common health misinformation. Always verify health information from credible sources 
-            such as healthcare providers, academic institutions, or recognized health organizations.
+          <div className="disclaimer mt-10 p-6 bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-400 text-yellow-800 rounded-lg shadow-sm max-w-4xl mx-auto">
+            <div className="flex items-start">
+              <div className="mr-4 mt-1">
+                <FaShieldAlt className="text-yellow-500 text-2xl" />
+              </div>
+              <div>
+                <strong className="text-lg">Important:</strong>
+                <p className="mt-2">
+                  These posts are fictional examples created to illustrate 
+                  common health misinformation. Always verify health information from credible sources 
+                  such as healthcare providers, academic institutions, or recognized health organizations.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>

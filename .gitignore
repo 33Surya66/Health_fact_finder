@@ -32,3 +32,4 @@ yarn-error.log*
 /.netlify
 .vercel 
 /Medical/backend/myenv/
+/Medical/backend/venv/

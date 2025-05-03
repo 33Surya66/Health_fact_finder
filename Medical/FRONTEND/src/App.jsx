@@ -12,6 +12,9 @@ import Hero from "./components/Hero";
 import Features from "./components/Features";
 import About from "./components/About";
 import Analyze from "./components/Analyze";
+import SymptomAnalyzer from "./components/SymptomAnalyzer";
+import MedicalUpdates from "./components/MedicalUpdates";
+import HealthMisinformationAnalyzer from "./components/HealthMisinformationAnalyzer";
 import Stats from "./components/Stats";
 import HowItWorks from "./components/HowItWorks";
 import RedditMisinformation from "./components/RedditMisinformationWithVerification";
@@ -54,7 +57,10 @@ const AppContent = () => {
                   <Hero />
                   <Features />
                   <About />
-                  <Analyze />
+                  {/* <MedicalUpdates /> */}
+                  <HealthMisinformationAnalyzer />
+                  {/* <Analyze /> */}
+                  <SymptomAnalyzer />
                   <Stats />
                   {/* <RedditMisinformationWithVerification /> */}
                   <HowItWorks />
