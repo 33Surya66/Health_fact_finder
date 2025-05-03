@@ -164,6 +164,7 @@ function Hero() {
               <div className="mt-4 text-center">
                 <p className="text-sm text-gray-500">
                   Our AI analyzes medical databases and research to verify health claims.
+                  All information is extracted from legitimate sources including cdc.gov.
                   Always consult with healthcare professionals for personal medical advice.
                 </p>
               </div>
